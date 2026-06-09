@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리스닝마인드 블로그 GA4 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #ffffff;
+  --bg2:    #f7f7f8;
+  --bg3:    #efefef;
+  --border: rgba(0,0,0,0.07);
+  --border2:rgba(0,0,0,0.14);
+  --text:   #111114;
+  --text2:  #6b6b78;
+  --text3:  #ababb5;
+  --accent: #5b4ef8;
+  --accent2:#7c6bff;
+  --green:  #0ea66a;
+  --red:    #e03030;
+  --amber:  #d97706;
+  --blue:   #2563eb;
+  --pink:   #db2777;
+
+  --seo:    #0ea66a;
+  --paid:   #e03030;
+  --direct: #6b6b78;
+  --geo:    #7c6bff;
+  --nl:     #2563eb;
+  --earned: #db2777;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Pretendard',sans-serif; font-size:13px; line-height:1.6; }
+
+/* HEADER */
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 28px; border-bottom:1px solid var(--border);
+  background:#fff; position:sticky; top:0; z-index:100;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-mark {
+  width:28px; height:28px; border-radius:6px; background:var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'DM Mono',monospace; font-size:11px; font-weight:500; color:#fff;
+}
+.logo-text { font-size:13px; font-weight:600; color:var(--text); }
+.logo-sub  { font-size:11px; color:var(--text2); margin-left:4px; }
+.week-badge {
+  font-family:'DM Mono',monospace; font-size:11px; color:var(--text2);
+  padding:4px 10px; border:1px solid var(--border2); border-radius:20px;
+}
+
+/* UPLOAD */
+.upload-banner {
+  margin:16px 28px 0; border:1.5px dashed var(--border2); border-radius:10px;
+  padding:12px 18px; display:flex; align-items:center; gap:14px;
+  cursor:pointer; transition:border-color .2s,background .2s; background:var(--bg2);
+}
+.upload-banner:hover { border-color:var(--accent); background:#f0eeff; }
+.upload-icon { font-size:18px; color:var(--accent); }
+.upload-text { flex:1; }
+.upload-title { font-size:12px; font-weight:500; color:var(--text); margin-bottom:2px; }
+.upload-desc  { font-size:11px; color:var(--text2); }
+.upload-btn {
+  padding:5px 14px; border-radius:6px; border:1px solid var(--accent);
+  color:var(--accent); background:none; font-size:11px; font-weight:500; cursor:pointer;
+}
+.upload-btn:hover { background:#ede9ff; }
+#fileInput { display:none; }
+
+/* WEEK FILTER */
+.week-filter {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:10px 28px; border-bottom:1px solid var(--border); background:#fff;
+}
+.wf-label { font-size:11px; color:var(--text2); white-space:nowrap; }
+.wf-chips  { display:flex; gap:5px; flex-wrap:wrap; flex:1; }
+.wf-chip {
+  padding:3px 11px; border-radius:20px; font-size:11px; font-weight:500;
+  border:1px solid var(--border2); background:none; color:var(--text2);
+  cursor:pointer; font-family:'DM Mono',monospace; transition:all .15s; white-space:nowrap;
+}
+.wf-chip:hover  { border-color:var(--accent); color:var(--accent2); }
+.wf-chip.on     { background:#ede9ff; border-color:var(--accent); color:var(--accent); font-weight:600; }
+.wf-divider { width:1px; height:18px; background:var(--border2); }
+.wf-presets { display:flex; gap:5px; }
+.wf-preset {
+  padding:3px 10px; border-radius:6px; font-size:11px; font-weight:500;
+  border:1px solid var(--border2); background:none; color:var(--text2);
+  cursor:pointer; transition:all .15s;
+}
+.wf-preset:hover { background:var(--bg2); color:var(--text); }
+
+/* TABS */
+.tab-nav { display:flex; gap:2px; padding:14px 28px 0; border-bottom:1px solid var(--border); }
+.tab-btn {
+  padding:7px 15px; border:none; background:none; color:var(--text2);
+  font-size:12px; font-weight:500; cursor:pointer; border-bottom:2px solid transparent;
+  margin-bottom:-1px; font-family:'Pretendard',sans-serif; transition:color .15s;
+}
+.tab-btn.active { color:var(--text); border-bottom-color:var(--accent); }
+.tab-btn:hover:not(.active) { color:var(--text); }
+
+/* PANEL */
+.panel { display:none; padding:22px 28px; }
+.panel.active { display:block; }
+
+/* KPI */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:20px; }
+.kpi-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
+.kpi-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
+.kpi-value { font-size:22px; font-weight:600; color:var(--text); font-family:'DM Mono',monospace; }
+.kpi-sub   { font-size:11px; margin-top:3px; }
+.kup   { color:#2563eb; }
+.kdown { color:#e03030; }
+.kflat { color:var(--text2); }
+
+/* SECTION */
+.sec-title {
+  font-size:11px; font-weight:600; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.08em;
+  margin:22px 0 10px; display:flex; align-items:center; gap:8px;
+}
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* CHARTS */
+.charts-2col { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+.charts-1col { margin-bottom:18px; }
+.chart-card  { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:15px 17px; }
+.chart-title { font-size:11px; font-weight:500; color:var(--text2); margin-bottom:10px; }
+.legend { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px; }
+.legend span { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text2); }
+.leg-sq { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+/* TABLES */
+.ch-table, .trend-table, .geo-table { width:100%; border-collapse:collapse; }
+.ch-table th, .trend-table th, .geo-table th {
+  font-size:10px; font-weight:500; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.05em;
+  padding:6px 10px; border-bottom:1px solid var(--border); text-align:right;
+}
+.ch-table th:first-child, .trend-table th:first-child, .geo-table th:first-child { text-align:left; }
+.ch-table td, .trend-table td, .geo-table td {
+  padding:9px 10px; border-bottom:1px solid var(--border);
+  color:var(--text2); text-align:right; font-size:12px; vertical-align:middle;
+}
+.ch-table td:first-child, .trend-table td:first-child, .geo-table td:first-child { text-align:left; }
+.ch-table tr:last-child td, .trend-table tr:last-child td, .geo-table tr:last-child td { border-bottom:none; }
+.ch-table tr:hover td, .trend-table tr:hover td { background:var(--bg3); }
+.ch-dot  { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+.ch-name { font-weight:500; color:var(--text); }
+.trend-wrap { overflow-x:auto; }
+.latest-col { color:var(--text) !important; font-weight:600; }
+
+/* BADGE */
+.badge { display:inline-block; font-size:10px; font-weight:500; padding:2px 7px; border-radius:10px; }
+.b-high   { background:#d1fae5; color:#065f46; }
+.b-mid    { background:#fef3c7; color:#92400e; }
+.b-low    { background:#fee2e2; color:#991b1b; }
+.b-info   { background:#dbeafe; color:#1e40af; }
+.b-purple { background:#ede9fe; color:#4c1d95; }
+
+/* WOW */
+.wow-up   { color:#e03030; font-weight:500; }
+.wow-down { color:#2563eb; font-weight:500; }
+.wow-flat { color:var(--text2); }
+
+/* INSIGHTS */
+.insight-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+.insight-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
+.insight-tag  {
+  font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px;
+  display:inline-block; margin-bottom:7px; text-transform:uppercase; letter-spacing:.05em;
+}
+.tag-warn   { background:#fef3c7; color:#92400e; }
+.tag-good   { background:#d1fae5; color:#065f46; }
+.tag-info   { background:#dbeafe; color:#1e40af; }
+.tag-purple { background:#ede9fe; color:#5b21b6; }
+.tag-red    { background:#fee2e2; color:#991b1b; }
+.insight-title { font-size:12px; font-weight:500; color:var(--text); margin-bottom:4px; }
+.insight-desc  { font-size:11px; color:var(--text2); line-height:1.65; }
+
+/* NOTICE */
+.notice {
+  background:#ede9fe; border:1px solid #c4b5fd; border-radius:8px;
+  padding:10px 14px; font-size:11px; color:#4c1d95; margin-bottom:14px; line-height:1.6;
+}
+.notice strong { color:var(--accent); }
+
+/* GEO classify */
+.geo-code { font-family:'DM Mono',monospace; font-size:10px; color:var(--accent); }
+
+@media(max-width:700px){
+  .charts-2col{grid-template-columns:1fr;}
+  .header,.panel,.tab-nav{padding-left:16px;padding-right:16px;}
+  .upload-banner,.week-filter{margin-left:0;padding-left:16px;padding-right:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">LM</div>
+    <div>
+      <span class="logo-text">리스닝마인드 블로그</span>
+      <span class="logo-sub">GA4 성과 대시보드</span>
+    </div>
+  </div>
+  <div class="week-badge" id="periodBadge">5주 전체</div>
+</div>
+
+<label class="upload-banner" for="fileInput">
+  <div class="upload-icon">⬆</div>
+  <div class="upload-text">
+    <div class="upload-title">CSV 파일 업로드로 자동 업데이트</div>
+    <div class="upload-desc">GA4 → 트래픽 획득 → 세션 소스/매체 CSV를 업로드하면 새 주차가 자동으로 추가됩니다.</div>
+  </div>
+  <div class="upload-btn">파일 선택</div>
+  <input type="file" id="fileInput" accept=".csv" multiple>
+</label>
+
+<div class="week-filter">
+  <span class="wf-label">주차 선택</span>
+  <div class="wf-chips" id="wfChips"></div>
+  <div class="wf-divider"></div>
+  <div class="wf-presets">
+    <button class="wf-preset" onclick="applyPreset('all')">전체</button>
+    <button class="wf-preset" onclick="applyPreset('last3')">최근 3주</button>
+    <button class="wf-preset" onclick="applyPreset('last2')">최근 2주</button>
+    <button class="wf-preset" onclick="applyPreset('latest')">최신 1주</button>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="sw('overview',this)">📊 성과 요약</button>
+  <button class="tab-btn" onclick="sw('trend',this)">📈 주간 추이</button>
+  <button class="tab-btn" onclick="sw('seo',this)">🔍 SEO 상세</button>
+  <button class="tab-btn" onclick="sw('geo',this)">🤖 GEO 상세</button>
+  <button class="tab-btn" onclick="sw('classify',this)">📋 채널 분류 기준</button>
+</div>
+
+<!-- 성과 요약 -->
+<div id="panel-overview" class="panel active">
+  <div id="kpiGrid" class="kpi-grid"></div>
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-title">채널별 유입수 비중 — <span id="donutPeriod"></span></div>
+      <div class="legend" id="donutLegend"></div>
+      <div style="position:relative;height:200px;"><canvas id="donutChart" role="img" aria-label="채널별 유입수 도넛 차트">채널별 세션</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">채널별 참여율 vs 참여시간 — <span id="qualityPeriod"></span></div>
+      <div class="legend">
+        <span><span class="leg-sq" style="background:#2563eb"></span>참여율(%)</span>
+        <span><span class="leg-sq" style="background:#0ea66a;opacity:.7"></span>참여시간(초)</span>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="qualityChart" role="img" aria-label="채널별 참여율 참여시간">채널 품질</canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">채널별 상세 지표 — <span id="chTablePeriod" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text2)"></span></div>
+  <table class="ch-table"><tbody id="chTableBody"></tbody></table>
+  <div class="sec-title">핵심 인사이트 — <span id="insightPeriod" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text2);font-size:11px;"></span></div>
+  <div class="insight-grid" id="insightGrid"></div>
+</div>
+
+<!-- 주간 추이 -->
+<div id="panel-trend" class="panel">
+  <div class="charts-1col">
+    <div class="chart-card">
+      <div class="chart-title">채널별 세션수 — 주간 추이</div>
+      <div class="legend" id="trendLegend"></div>
+      <div style="position:relative;height:240px;"><canvas id="trendChart" role="img" aria-label="채널별 세션 추이">세션 추이</canvas></div>
+    </div>
+  </div>
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-title">참여율 추이</div>
+      <div style="position:relative;height:180px;"><canvas id="erTrendChart" role="img" aria-label="참여율 추이">참여율 추이</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">GEO 세션 추이</div>
+      <div style="position:relative;height:180px;"><canvas id="geoTrendChart" role="img" aria-label="GEO 추이">GEO 추이</canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">유입수 주간 기록</div>
+  <div class="trend-wrap"><table class="trend-table"><tbody id="sessionTrendBody"></tbody></table></div>
+  <div class="sec-title" style="margin-top:18px;">참여율 주간 기록</div>
+  <div class="trend-wrap"><table class="trend-table"><tbody id="erTrendBody"></tbody></table></div>
+</div>
+
+<!-- SEO 상세 -->
+<div id="panel-seo" class="panel">
+  <div class="notice" style="background:#f0fdf4;border-color:#86efac;color:#166534;">
+    <strong>SEO (Search Engine Optimization)</strong> — 구글·네이버·빙 등 검색엔진에서 자연 검색으로 유입된 트래픽. 검색 순위와 콘텐츠 품질을 반영하는 가장 안정적인 채널입니다.
+  </div>
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-title">검색엔진별 세션수 — 주간 추이</div>
+      <div class="legend" id="seoSessLegend"></div>
+      <div style="position:relative;height:200px;"><canvas id="seoSessChart" role="img" aria-label="검색엔진별 세션 추이">SEO 세션 추이</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">검색엔진별 참여율 — 주간 추이</div>
+      <div style="position:relative;height:200px;"><canvas id="seoErChart" role="img" aria-label="검색엔진별 참여율 추이">SEO 참여율 추이</canvas></div>
+    </div>
+  </div>
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-title">검색엔진별 비중 — <span id="seoPiePeriod"></span></div>
+      <div class="legend" id="seoPieLegend"></div>
+      <div style="position:relative;height:180px;"><canvas id="seoPieChart" role="img" aria-label="검색엔진별 비중 도넛">SEO 엔진 비중</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">검색엔진별 참여시간 — <span id="seoAtPeriod"></span></div>
+      <div style="position:relative;height:180px;"><canvas id="seoAtChart" role="img" aria-label="검색엔진별 참여시간">SEO 참여시간</canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">검색엔진별 주간 기록</div>
+  <div class="trend-wrap"><table class="trend-table"><tbody id="seoEngineBody"></tbody></table></div>
+  <div class="sec-title" style="margin-top:18px;">소스별 상세</div>
+  <div class="trend-wrap"><table class="trend-table"><tbody id="seoSrcBody"></tbody></table></div>
+  <div class="sec-title" style="margin-top:18px;">SEO 인사이트</div>
+  <div class="insight-grid" id="seoInsightGrid"></div>
+</div>
+
+<!-- GEO 상세 -->
+<div id="panel-geo" class="panel">
+  <div class="notice">
+    <strong>GEO (Generative Engine Optimization)</strong> — ChatGPT·Claude·Perplexity 등 AI 도구가 블로그를 인용·링크해서 유입된 트래픽. 절대값이 작아 <strong>추이 중심</strong>으로 해석하세요.
+  </div>
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-title">AI 소스별 세션수 — 주간 추이</div>
+      <div class="legend" id="geoSessLegend"></div>
+      <div style="position:relative;height:200px;"><canvas id="geoSessChart" role="img" aria-label="GEO AI별 세션 추이">AI별 세션 추이</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">AI 소스별 참여율 — 주간 추이</div>
+      <div style="position:relative;height:200px;"><canvas id="geoErChart" role="img" aria-label="GEO AI별 참여율 추이">AI별 참여율 추이</canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">AI 소스별 상세</div>
+  <div class="trend-wrap"><table class="trend-table"><tbody id="geoDetailBody"></tbody></table></div>
+  <div class="sec-title" style="margin-top:18px;">GEO 인사이트</div>
+  <div class="insight-grid" id="geoInsightGrid"></div>
+</div>
+
+<!-- 채널 분류 기준 -->
+<div id="panel-classify" class="panel">
+  <div class="notice">GA4 소스/매체를 아래 기준으로 6개 채널로 분류합니다. 새 소스는 해당 채널에 추가하거나 팀 논의 후 결정하세요.</div>
+  <table class="geo-table">
+    <thead><tr><th style="width:80px;">채널</th><th style="width:40%;">포함 소스/매체</th><th>분류 근거</th><th style="width:70px;">상태</th></tr></thead>
+    <tbody id="classifyBody"></tbody>
+  </table>
+  <div class="sec-title" style="margin-top:22px;">논의 필요 항목</div>
+  <table class="geo-table">
+    <thead><tr><th>소스/매체</th><th>현재 분류</th><th>논의 포인트</th></tr></thead>
+    <tbody>
+      <tr><td class="geo-code">linkedin.com / referral</td><td><span class="badge b-mid">페이드</span></td><td>광고 vs 자연 공유 구분 불가 — UTM 적용 시 해소</td></tr>
+      <tr><td class="geo-code">mail.google.com / referral</td><td><span class="badge b-info">뉴스레터</span></td><td>뉴스레터 클릭 vs 일반 이메일 구분 불가</td></tr>
+      <tr><td class="geo-code">sch.factchat.bot / referral</td><td><span class="badge b-purple">GEO 잠정</span></td><td>AI 챗봇 추정이나 확인 필요</td></tr>
+      <tr><td class="geo-code">ascentkorea.com / referral</td><td><span class="badge b-mid">기타</span></td><td>자사 웹사이트 → 내부 트래픽 필터 제외 권장</td></tr>
+      <tr><td class="geo-code">gemini.google.com / ai-assistant</td><td><span class="badge b-purple">GEO</span></td><td>Gemini AI 어시스턴트 유입 — GEO 확정 권장</td></tr>
+    </tbody>
+  </table>
+  <div class="sec-title" style="margin-top:22px;">UTM 표준 규칙</div>
+  <table class="geo-table">
+    <thead><tr><th>채널</th><th>utm_source</th><th>utm_medium</th><th>utm_campaign</th></tr></thead>
+    <tbody>
+      <tr><td>메타 광고</td><td class="geo-code">facebook</td><td class="geo-code">paid</td><td class="geo-code">캠페인명</td></tr>
+      <tr><td>링크드인 광고</td><td class="geo-code">linkedin</td><td class="geo-code">paid</td><td class="geo-code">캠페인명</td></tr>
+      <tr><td>뉴스레터</td><td class="geo-code">newsletter</td><td class="geo-code">email</td><td class="geo-code">발송날짜</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// ═══════════════════════════
+// 시트 CSV URL
+// ═══════════════════════════
+const CSV_CH = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd-lJ0s5MKmLCf4TuWLvQ2L0gRfEc4flrNzpoKrYE69z1nCRbQ5cIMj8k09VVk5UA5h7npi6Bc7BgG/pub?gid=1671811950&single=true&output=csv';
+const CSV_AI = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd-lJ0s5MKmLCf4TuWLvQ2L0gRfEc4flrNzpoKrYE69z1nCRbQ5cIMj8k09VVk5UA5h7npi6Bc7BgG/pub?gid=1320825064&single=true&output=csv';
+
+// ═══════════════════════════
+// 원본 전체 데이터 (초기값 — CSV 로드 후 덮어씀)
+// ═══════════════════════════
+const ALL_WEEKS = ["5/3~5/9","5/10~5/16","5/17~5/23","5/24~5/30","5/31~6/6"];
+const CH  = ["SEO","페이드","Direct","GEO","뉴스레터","언드","기타"];
+const AI  = ["ChatGPT","Perplexity","Claude","Gemini","NotebookLM","Copilot","기타GEO"];
+const CHC = {SEO:"#0ea66a",페이드:"#e03030",Direct:"#6b6b78",GEO:"#7c6bff",뉴스레터:"#2563eb",언드:"#db2777",기타:"#aaaaaa"};
+const AIC = {ChatGPT:"#19c37d",Perplexity:"#20b8cd",Claude:"#e8845a",Gemini:"#4285f4",NotebookLM:"#f59e0b",Copilot:"#7cb9e8",기타GEO:"#aaa"};
+
+const DB = {
+  weeks: [...ALL_WEEKS],
+  // SEO-Organic: google/organic, naver/organic, bing/organic 등 pure organic
+  // SEO-Referral: m.search.naver.com, search.google.com, blog.naver.com 등 검색엔진 referral
+  chS:  {SEO:[378,505,485,442,554],페이드:[644,503,495,230,226],Direct:[343,453,317,363,323],GEO:[86,111,120,99,77],뉴스레터:[156,70,18,251,155],언드:[2,1,11,3,3],기타:[16,19,25,37,24]},
+  chEr: {SEO:[.484,.480,.424,.540,.491],페이드:[.095,.093,.071,.070,.128],Direct:[.464,.402,.382,.408,.359],GEO:[.500,.351,.425,.374,.429],뉴스레터:[.442,.457,.500,.494,.413],언드:[.500,.000,.364,1.000,.333],기타:[.500,.526,.440,.568,.542]},
+  chAt: {SEO:[28,28,22,27,29],페이드:[2,2,2,4,4],Direct:[34,43,26,53,20],GEO:[23,21,29,30,30],뉴스레터:[59,62,25,29,35],언드:[0,0,18,16,16],기타:[29,32,26,36,25]},
+  aiS:  {ChatGPT:[27,49,48,55,33],Perplexity:[38,28,37,26,24],Claude:[8,20,20,8,11],Gemini:[8,11,13,8,7],NotebookLM:[1,2,0,2,0],Copilot:[2,0,0,0,0],기타GEO:[2,1,2,0,2]},
+  aiEr: {ChatGPT:[.519,.327,.312,.382,.394],Perplexity:[.553,.429,.405,.346,.500],Claude:[.375,.350,.550,.375,.091],Gemini:[.500,.182,.692,.375,.857],NotebookLM:[0,.500,0,.500,0],Copilot:[.500,0,0,0,0],기타GEO:[0,1,.5,0,.5]},
+  aiAt: {ChatGPT:[19,13,29,16,24],Perplexity:[27,19,26,16,18],Claude:[43,21,28,20,2],Gemini:[66,13,64,20,148],NotebookLM:[0,81,0,11,0],Copilot:[0,0,0,0,0],기타GEO:[0,0,9,0,29]},
+};
+
+const CLASSIFY = [
+  {ch:"SEO",c:"#0ea66a",srcs:["google/organic","naver/organic","bing/organic","daum/organic","yahoo/organic","yandex/organic"],r:"순수 자연 검색. medium=organic만 포함",st:"확정"},
+  {ch:"기타",c:"#aaaaaa",srcs:["m.search.naver.com/referral","search.google.com/referral","br.nate.com/referral"],r:"검색엔진 도메인 referral. 기술적 분류 오류로 organic에서 누락된 검색 유입",st:"모니터링"},
+  {ch:"페이드",c:"#e03030",srcs:["facebook/ad","fb/paid","l.facebook.com/referral","m.facebook.com/referral","adsmanager.facebook.com/referral","eventsmanager.facebook.com/referral","linkedin.com/referral"],r:"유료 광고 유입. medium=ad/paid 또는 광고 플랫폼 referral",st:"확정"},
+  {ch:"GEO",c:"#7c6bff",srcs:["chatgpt.com/referral","chatgpt.com/(not set)","perplexity.ai/referral","perplexity/(not set)","claude.ai/referral","gemini.google.com/referral","gemini.google.com/ai-assistant","notebooklm.google.com/referral","copilot.com/referral","skywork.ai/referral","gpt.k-university.ai/referral"],r:"AI 도구 답변 내 인용·링크 유입. AI 플랫폼 도메인 referral",st:"지속 추가"},
+  {ch:"뉴스레터",c:"#2563eb",srcs:["newsletter/email","mail.google.com/referral","private/email"],r:"이메일 뉴스레터 클릭. utm_medium=email 또는 메일 클라이언트 referral",st:"확정"},
+  {ch:"언드",c:"#db2777",srcs:["openads.co.kr/referral","i-boss.co.kr/referral","ditoday.com/referral","app.liner.com/referral","blog.naver.com/referral","naver.com/referral"],r:"외부 미디어·커뮤니티·블로그 배포로 발생한 유입",st:"확정"},
+  {ch:"Direct",c:"#6b6b78",srcs:["(direct)/(none)"],r:"직접 입력, 북마크, UTM 없는 공유. UTM 강화 시 각 채널로 분리 가능",st:"모니터링"},
+];
+
+// ═══════════════════════════
+// 필터 상태
+// ═══════════════════════════
+let filter = {start:0, end:DB.weeks.length-1};
+
+// 필터 적용된 슬라이스
+function F()   { return {start:filter.start, end:filter.end}; }
+function wks() { return DB.weeks.slice(filter.start, filter.end+1); }
+function sl(arr){ return arr.slice(filter.start, filter.end+1); }
+function li()  { return filter.end; }
+function lfi() { return filter.end - filter.start; }
+function pi()  { return (filter.end - 1 >= filter.start) ? filter.end - 1 : null; } // 필터 범위 안의 전주만
+
+// ═══════════════════════════
+// 유틸
+// ═══════════════════════════
+const pct = v => (v*100).toFixed(1)+'%';
+function wow(c,p){
+  if(p==null||p===0) return {t:'-',cl:'wow-flat'};
+  const d=(c-p)/p*100;
+  if(Math.abs(d)<0.5) return {t:'→',cl:'wow-flat'};
+  return d>0?{t:`▲${d.toFixed(1)}%`,cl:'wow-up'}:{t:`▼${Math.abs(d).toFixed(1)}%`,cl:'wow-down'};
+}
+function wowPp(c,p){
+  const d=(c-p)*100;
+  if(Math.abs(d)<0.5) return {t:'→',cl:'wow-flat'};
+  return d>0?{t:`▲${d.toFixed(1)}pp`,cl:'wow-up'}:{t:`▼${Math.abs(d).toFixed(1)}pp`,cl:'wow-down'};
+}
+const periodLabel = () => {
+  const n = filter.end-filter.start+1;
+  const s = DB.weeks[filter.start], e = DB.weeks[filter.end];
+  return s===e ? s : `${s.split('~')[0]}~${e.split('~')[1]} (${n}주)`;
+};
+
+// ═══════════════════════════
+// 주차 필터 칩
+// ═══════════════════════════
+function buildChips(){
+  document.getElementById('wfChips').innerHTML = DB.weeks.map((w,i)=>
+    `<button class="wf-chip${i>=filter.start&&i<=filter.end?' on':''}" onclick="toggleChip(${i})">${w}</button>`
+  ).join('');
+  document.getElementById('periodBadge').textContent = periodLabel();
+}
+
+function toggleChip(i){
+  // 선택된 단일 주차면 해제(전체로), 아니면 해당 주차만
+  if(filter.start===i && filter.end===i){
+    filter.start=0; filter.end=DB.weeks.length-1;
+  } else {
+    filter.start=i; filter.end=i;
+  }
+  buildChips();
+  renderAll();
+}
+
+function applyPreset(p){
+  const n=DB.weeks.length;
+  if(p==='all')    {filter.start=0;     filter.end=n-1;}
+  if(p==='last3')  {filter.start=Math.max(0,n-3); filter.end=n-1;}
+  if(p==='last2')  {filter.start=Math.max(0,n-2); filter.end=n-1;}
+  if(p==='latest') {filter.start=n-1;   filter.end=n-1;}
+  buildChips();
+  renderAll();
+}
+
+// ═══════════════════════════
+// 차트 인스턴스
+// ═══════════════════════════
+const charts={};
+function mkChart(id,cfg){
+  if(charts[id]) charts[id].destroy();
+  charts[id]=new Chart(document.getElementById(id),cfg);
+}
+
+const gc='rgba(0,0,0,0.05)', tc='#6b6b78';
+const dashes=[[], [6,3],[3,3],[8,3],[4,4],[2,2],[]];
+
+// ═══════════════════════════
+// 렌더 함수들 (모두 filter 기준)
+// ═══════════════════════════
+
+// 필터 범위 집계 헬퍼: 세션 합산, 참여율/참여시간은 가중평균
+function aggCh(c){
+  const sArr=sl(DB.chS[c]), erArr=sl(DB.chEr[c]), atArr=sl(DB.chAt[c]);
+  const s=sArr.reduce((a,b)=>a+b,0);
+  const er=s?sArr.reduce((a,v,k)=>a+v*erArr[k],0)/s:0;
+  const at=s?Math.round(sArr.reduce((a,v,k)=>a+v*atArr[k],0)/s):0;
+  return {s,er,at};
+}
+
+function renderKPI(){
+  const i=li(), p=pi();
+  const agg={}; CH.forEach(c=>agg[c]=aggCh(c));
+  const totalS=CH.reduce((a,c)=>a+agg[c].s,0);
+  const totalSP=p!=null?CH.reduce((a,c)=>a+DB.chS[c][p],0):null;
+  const totalE=CH.reduce((a,c)=>a+agg[c].s*agg[c].er,0);
+  const er=totalS?totalE/totalS:0;
+  const geoS=agg.GEO.s, geoSP=p!=null?DB.chS.GEO[p]:null;
+  const nlS=agg.뉴스레터.s;
+  const seoS=agg.SEO.s, seoSP=p!=null?DB.chS.SEO[p]:null;
+  const wS=wow(totalS,totalSP), wG=wow(geoS,geoSP);
+  const isMulti=filter.end>filter.start;
+  const subLabel=isMulti?'기간 합산':'vs 전주';
+
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">총 유입수</div>
+      <div class="kpi-value">${totalS.toLocaleString()}</div>
+      <div class="kpi-sub ${isMulti?'kflat':wS.cl}">${isMulti?periodLabel():wS.t+' vs 전주'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">전체 참여율</div>
+      <div class="kpi-value">${(er*100).toFixed(1)}%</div>
+      <div class="kpi-sub kflat">참여 세션 ${Math.round(totalE).toLocaleString()}</div></div>
+    <div class="kpi-card"><div class="kpi-label">SEO 세션</div>
+      <div class="kpi-value">${seoS.toLocaleString()}</div>
+      <div class="kpi-sub ${isMulti?'kflat':wow(seoS,seoSP).cl}">${isMulti?'기간 합산':wow(seoS,seoSP).t+' vs 전주'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">GEO 세션</div>
+      <div class="kpi-value">${geoS}</div>
+      <div class="kpi-sub ${isMulti?'kflat':wG.cl}">${isMulti?'기간 합산':wG.t+' vs 전주'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">뉴스레터 세션</div>
+      <div class="kpi-value">${nlS}</div>
+      <div class="kpi-sub kflat">참여율 ${pct(agg.뉴스레터.er)}</div></div>`;
+}
+
+function renderDonut(){
+  const agg={}; CH.forEach(c=>agg[c]=aggCh(c));
+  const data=CH.map(c=>agg[c].s);
+  const total=data.reduce((a,b)=>a+b,0);
+  document.getElementById('donutPeriod').textContent=periodLabel();
+  document.getElementById('donutLegend').innerHTML=CH.map((c,k)=>
+    `<span><span class="leg-sq" style="background:${CHC[c]}"></span>${c} ${Math.round(data[k]/total*100)}%</span>`
+  ).join('');
+  mkChart('donutChart',{
+    type:'doughnut',
+    data:{labels:CH,datasets:[{data,backgroundColor:CH.map(c=>CHC[c]),borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toLocaleString()}세션 (${Math.round(ctx.parsed/total*100)}%)`}}}}
+  });
+}
+
+function renderQuality(){
+  const agg={}; CH.forEach(c=>agg[c]=aggCh(c));
+  document.getElementById('qualityPeriod').textContent=periodLabel();
+  document.getElementById('seoAtPeriod').textContent=periodLabel();
+  mkChart('qualityChart',{
+    type:'bar',
+    data:{labels:CH,datasets:[
+      {label:'참여율(%)',data:CH.map(c=>+(agg[c].er*100).toFixed(1)),backgroundColor:CH.map(c=>CHC[c]+'99'),yAxisID:'y'},
+      {label:'참여시간(초)',data:CH.map(c=>agg[c].at),backgroundColor:CH.map(c=>CHC[c]+'44'),yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{position:'left',max:60,ticks:{color:tc,callback:v=>v+'%'},grid:{color:gc}},
+              y2:{position:'right',ticks:{color:tc,callback:v=>v+'s'},grid:{display:false}}}}
+  });
+}
+
+function renderChTable(){
+  const i=li(), p=pi();
+  const isMulti=filter.end>filter.start;
+  const agg={}; CH.forEach(c=>agg[c]=aggCh(c));
+  document.getElementById('chTablePeriod').textContent=periodLabel();
+  const qB=er=>er>=.45?'<span class="badge b-high">우수</span>':er>=.30?'<span class="badge b-mid">양호</span>':'<span class="badge b-low">개선필요</span>';
+  const total=CH.reduce((a,c)=>a+agg[c].s,0);
+  const wowCol=isMulti?'<th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">기간내 WoW</th>':'<th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">WoW</th>';
+  let h=`<tr style="border-bottom:1px solid var(--border)">
+    <th style="text-align:left;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">채널</th>
+    <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">유입수</th>
+    <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">비중</th>
+    <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">참여율</th>
+    <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">참여시간</th>
+    ${wowCol}
+    <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--text3);text-transform:uppercase">품질</th>
+  </tr>`;
+  CH.forEach(c=>{
+    const {s,er,at}=agg[c];
+    const sp=p!=null?DB.chS[c][p]:null;
+    const w=isMulti?wow(DB.chS[c][filter.end],DB.chS[c][filter.start]):wow(s,sp);
+    h+=`<tr><td><span class="ch-dot" style="background:${CHC[c]}"></span><span class="ch-name">${c}</span></td>
+      <td>${s.toLocaleString()}</td><td>${total?Math.round(s/total*100):0}%</td>
+      <td>${pct(er)}</td><td>${at}초</td>
+      <td class="${w.cl}">${w.t}</td><td>${qB(er)}</td></tr>`;
+  });
+  document.getElementById('chTableBody').innerHTML=h;
+}
+
+function renderInsights(){
+  const p=pi();
+  const aggPaid=aggCh('페이드'), aggGeo=aggCh('GEO'), aggNl=aggCh('뉴스레터'), aggSeo=aggCh('SEO');
+  const paidEr=aggPaid.er;
+  const geoS=aggGeo.s, geoSP=p!=null?DB.chS.GEO[p]:null;
+  const nlAt=aggNl.at;
+  const seoEr=aggSeo.er;
+  const wG=wow(geoS,geoSP);
+  const wkLabel=periodLabel();
+  const isMulti=filter.end>filter.start;
+  const ins=[
+    paidEr<.1
+      ?{tag:'warn', label:'주의',    ti:`페이드 참여율 ${pct(paidEr)}`, de:`${wkLabel} 기준. 광고 유입의 ${pct(paidEr)}만 실제 읽음. 랜딩 콘텐츠와 타겟 정합성 점검 필요.`}
+      :{tag:'good', label:'양호',    ti:`페이드 참여율 ${pct(paidEr)}`, de:`${wkLabel} 기준. 페이드 참여율이 10% 이상으로 양호합니다.`},
+    {tag:geoS>(geoSP||0)?'good':'info', label:wG.cl==='wow-up'?'성장':'모니터링',
+     ti:`GEO ${geoS}세션${isMulti?'':' '+wG.t}`,
+     de:`${wkLabel} 기준${!isMulti&&p!=null?` (전주 ${geoSP}세션 대비)`:' (기간 합산)'}. AI 레퍼럴 채널. ChatGPT가 꾸준히 성장 중.`},
+    {tag:'info', label:'리드육성',
+     ti:`뉴스레터 참여시간 ${nlAt}초`,
+     de:`${wkLabel} 기준. 뉴스레터 구독자가 블로그를 가장 깊이 읽는 집단. B2B에서 재방문은 구매 검토 신호.`},
+    {tag:seoEr>=.45?'good':'warn', label:'SEO',
+     ti:`SEO 참여율 ${pct(seoEr)}`,
+     de:`${wkLabel} 기준. 검색 유입 독자의 콘텐츠 소비 품질. 45% 이상이면 검색 의도와 콘텐츠가 잘 맞는 신호.`},
+  ];
+  const el=document.getElementById('insightPeriod');
+  if(el) el.textContent=wkLabel+' 기준';
+  document.getElementById('insightGrid').innerHTML=ins.map(x=>
+    `<div class="insight-card"><div class="insight-tag tag-${x.tag}">${x.label}</div>
+    <div class="insight-title">${x.ti}</div><div class="insight-desc">${x.de}</div></div>`
+  ).join('');
+}
+
+function renderTrendCharts(){
+  const w=wks();
+  document.getElementById('trendLegend').innerHTML=CH.map(c=>
+    `<span><span class="leg-sq" style="background:${CHC[c]}"></span>${c}</span>`
+  ).join('');
+  mkChart('trendChart',{type:'line',
+    data:{labels:w,datasets:CH.map((c,k)=>({
+      label:c,data:sl(DB.chS[c]),borderColor:CHC[c],backgroundColor:'transparent',
+      pointBackgroundColor:CHC[c],pointRadius:4,borderWidth:2,borderDash:dashes[k],tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},y:{ticks:{color:tc},grid:{color:gc}}}}
+  });
+  mkChart('erTrendChart',{type:'line',
+    data:{labels:w,datasets:CH.map((c,k)=>({
+      label:c,data:sl(DB.chEr[c]).map(v=>+(v*100).toFixed(1)),
+      borderColor:CHC[c],backgroundColor:'transparent',
+      pointBackgroundColor:CHC[c],pointRadius:3,borderWidth:1.5,borderDash:dashes[k],tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{max:60,ticks:{color:tc,callback:v=>v+'%'},grid:{color:gc}}}}
+  });
+  mkChart('geoTrendChart',{type:'line',
+    data:{labels:w,datasets:[{label:'GEO',data:sl(DB.chS.GEO),
+      borderColor:'#7c6bff',backgroundColor:'rgba(124,107,255,.08)',
+      pointBackgroundColor:'#7c6bff',pointRadius:5,borderWidth:2,fill:true,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{min:0,ticks:{color:tc},grid:{color:gc}}}}
+  });
+}
+
+function renderTrendTables(){
+  const w=wks(), fi=lfi();
+  // 세션 테이블
+  let h=`<tr><th>채널</th>${w.map((x,k)=>`<th${k===fi?' class="latest-col"':''}>${x}</th>`).join('')}<th>WoW</th><th>평균</th></tr>`;
+  CH.forEach(c=>{
+    const d=sl(DB.chS[c]);
+    const ww=fi>0?wow(d[fi],d[fi-1]):{t:'-',cl:'wow-flat'};
+    const avg=Math.round(d.reduce((a,b)=>a+b,0)/d.length);
+    h+=`<tr><td><span class="ch-dot" style="background:${CHC[c]}"></span>${c}</td>
+      ${d.map((v,k)=>`<td${k===fi?' class="latest-col"':''}>${v.toLocaleString()}</td>`).join('')}
+      <td class="${ww.cl}">${ww.t}</td><td>${avg.toLocaleString()}</td></tr>`;
+  });
+  const tots=w.map((_,k)=>CH.reduce((a,c)=>a+sl(DB.chS[c])[k],0));
+  const wT=fi>0?wow(tots[fi],tots[fi-1]):{t:'-',cl:'wow-flat'};
+  h+=`<tr style="border-top:2px solid var(--border)"><td><strong>합계</strong></td>
+    ${tots.map((v,k)=>`<td${k===fi?' class="latest-col"':''}><strong>${v.toLocaleString()}</strong></td>`).join('')}
+    <td class="${wT.cl}">${wT.t}</td><td><strong>${Math.round(tots.reduce((a,b)=>a+b,0)/tots.length).toLocaleString()}</strong></td></tr>`;
+  document.getElementById('sessionTrendBody').innerHTML=h;
+
+  // 참여율 테이블
+  let h2=`<tr><th>채널</th>${w.map((x,k)=>`<th${k===fi?' class="latest-col"':''}>${x}</th>`).join('')}<th>WoW</th></tr>`;
+  CH.forEach(c=>{
+    const d=sl(DB.chEr[c]);
+    const ww=fi>0?wowPp(d[fi],d[fi-1]):{t:'-',cl:'wow-flat'};
+    h2+=`<tr><td><span class="ch-dot" style="background:${CHC[c]}"></span>${c}</td>
+      ${d.map((v,k)=>`<td${k===fi?' class="latest-col"':''}>${pct(v)}</td>`).join('')}
+      <td class="${ww.cl}">${ww.t}</td></tr>`;
+  });
+  document.getElementById('erTrendBody').innerHTML=h2;
+}
+
+function renderGEO(){
+  const w=wks(), fi=lfi();
+  document.getElementById('geoSessLegend').innerHTML=AI.map(a=>
+    `<span><span class="leg-sq" style="background:${AIC[a]}"></span>${a}</span>`
+  ).join('');
+  mkChart('geoSessChart',{type:'line',
+    data:{labels:w,datasets:AI.map((a,k)=>({
+      label:a,data:sl(DB.aiS[a]),borderColor:AIC[a],backgroundColor:'transparent',
+      pointBackgroundColor:AIC[a],pointRadius:4,borderWidth:2,borderDash:dashes[k]||[],tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{min:0,ticks:{color:tc},grid:{color:gc}}}}
+  });
+  mkChart('geoErChart',{type:'line',
+    data:{labels:w,datasets:AI.filter(a=>a!=='기타GEO').map((a,k)=>({
+      label:a,data:sl(DB.aiEr[a]).map(v=>+(v*100).toFixed(1)),
+      borderColor:AIC[a],backgroundColor:'transparent',
+      pointBackgroundColor:AIC[a],pointRadius:4,borderWidth:2,borderDash:dashes[k]||[],tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{min:0,max:80,ticks:{color:tc,callback:v=>v+'%'},grid:{color:gc}}}}
+  });
+
+  // 상세 테이블
+  let h=`<tr><th>AI 소스</th>${w.map((x,k)=>`<th${k===fi?' class="latest-col"':''}>${x}</th>`).join('')}<th>WoW</th></tr>`;
+  AI.forEach(a=>{
+    const d=sl(DB.aiS[a]);
+    const ww=fi>0?wow(d[fi],d[fi-1]):{t:'-',cl:'wow-flat'};
+    h+=`<tr><td><span class="ch-dot" style="background:${AIC[a]}"></span>${a}</td>
+      ${d.map((v,k)=>`<td${k===fi?' class="latest-col"':''}>${v||'-'}</td>`).join('')}
+      <td class="${ww.cl}">${ww.t}</td></tr>`;
+  });
+  const gT=w.map((_,k)=>AI.reduce((a,n)=>a+sl(DB.aiS[n])[k],0));
+  const wGT=fi>0?wow(gT[fi],gT[fi-1]):{t:'-',cl:'wow-flat'};
+  h+=`<tr style="border-top:2px solid var(--border)"><td><strong>GEO 합계</strong></td>
+    ${gT.map((v,k)=>`<td${k===fi?' class="latest-col"':''}><strong>${v}</strong></td>`).join('')}
+    <td class="${wGT.cl}">${wGT.t}</td></tr>`;
+  document.getElementById('geoDetailBody').innerHTML=h;
+
+  // GEO 인사이트
+  const i=li(), p=pi();
+  const gptTrend=DB.aiS.ChatGPT;
+  const isGPTUp=gptTrend[i]>gptTrend[filter.start];
+  const claudeEr=DB.aiEr.Claude[i];
+  const gemAt=DB.aiAt.Gemini[i];
+  const wkLabel=DB.weeks[i];
+  const geoIns=[
+    {tag:isGPTUp?'good':'warn', label:isGPTUp?'성장':'모니터링',
+     ti:`ChatGPT ${gptTrend[filter.start]}→${gptTrend[i]}세션`,
+     de:`${wkLabel} 기준. ${isGPTUp?'선택 기간 내 꾸준한 성장세. GEO 채널 내 핵심 소스.':'ChatGPT 트래픽 감소. 콘텐츠 인용 여부 점검 필요.'}`},
+    {tag:claudeEr<.15?'warn':'info', label:claudeEr<.15?'주의':'양호',
+     ti:`Claude 참여율 ${pct(claudeEr)}`,
+     de:`${wkLabel} 기준. ${claudeEr<.15?'Claude 유입 참여율 급락. GA4에서 랜딩 글 확인 필요.':'Claude 유입 참여율 양호. AI 레퍼럴 중 참여시간 상위권.'}`},
+    gemAt>100
+      ?{tag:'warn', label:'이상치', ti:`Gemini 참여시간 ${gemAt}초`, de:`${wkLabel} 기준. 소수 장시간 체류로 평균이 왜곡된 것으로 보입니다. 다음 주 수치로 재판단하세요.`}
+      :{tag:'info', label:'Gemini',  ti:`Gemini 참여시간 ${gemAt}초`, de:`${wkLabel} 기준. Gemini 유입 참여시간이 안정화됐습니다.`},
+    {tag:'purple', label:'해석 주의', ti:'절대값보다 추세로 판단',
+     de:'AI별 세션이 8~55 수준이라 1~2명 차이가 큰 변동으로 보입니다. 3~4주 추이로 해석하세요.'},
+  ];
+  document.getElementById('geoInsightGrid').innerHTML=geoIns.map(x=>
+    `<div class="insight-card"><div class="insight-tag tag-${x.tag}">${x.label}</div>
+    <div class="insight-title">${x.ti}</div><div class="insight-desc">${x.de}</div></div>`
+  ).join('');
+}
+
+function renderClassify(){
+  const stB=st=>st==='확정'?'<span class="badge b-high">확정</span>':st==='지속 추가'?'<span class="badge b-purple">지속 추가</span>':'<span class="badge b-mid">모니터링</span>';
+  document.getElementById('classifyBody').innerHTML=CLASSIFY.map(d=>
+    `<tr><td><span class="ch-dot" style="background:${d.c}"></span><strong>${d.ch}</strong></td>
+    <td style="font-size:11px;line-height:1.9;">${d.srcs.map(s=>`<span class="geo-code">${s}</span>`).join(' &nbsp;')}</td>
+    <td style="font-size:11px;color:var(--text2);">${d.r}</td>
+    <td>${stB(d.st)}</td></tr>`
+  ).join('');
+}
+
+// ═══════════════════════════
+// CSV 파싱
+// ═══════════════════════════
+const SEO_S =['google / organic','naver / organic','bing / organic','daum / organic','yahoo / organic','yandex / organic'];
+const ETC_S =['m.search.naver.com / referral','search.google.com / referral','br.nate.com / referral'];
+const GEO_S =['perplexity.ai / referral','chatgpt.com / referral','claude.ai / referral','gemini.google.com / referral','gemini.google.com / ai-assistant','chatgpt.com / (not set)','perplexity / (not set)','perplexity / (none)','perplexity / referral','notebooklm.google.com / referral','felo.ai / referral','copilot.com / referral','copilot.com / (not set)','sch.factchat.bot / referral','chatlyai.app / referral','gpt.k-university.ai / referral','skywork.ai / referral'];
+const PAID_S=['facebook / ad','l.facebook.com / referral','m.facebook.com / referral','facebook.com / referral','lm.facebook.com / referral','ko-kr.facebook.com / referral','fb / paid','adsmanager.facebook.com / referral','eventsmanager.facebook.com / referral','linkedin.com / referral'];
+const NL_S  =['newsletter / email','mail.google.com / referral','private / email'];
+const EARN_S=['openads.co.kr / referral','i-boss.co.kr / referral','ditoday.com / referral','app.liner.com / referral','blog.naver.com / referral','naver.com / referral'];
+const DIR_S =['(direct) / (none)'];
+const AI_MAP={
+  ChatGPT:['chatgpt.com / referral','chatgpt.com / (not set)'],
+  Perplexity:['perplexity.ai / referral','perplexity / (not set)','perplexity / (none)','perplexity / referral'],
+  Claude:['claude.ai / referral'],
+  Gemini:['gemini.google.com / referral','gemini.google.com / ai-assistant'],
+  NotebookLM:['notebooklm.google.com / referral'],
+  Copilot:['copilot.com / referral','copilot.com / (not set)'],
+  기타GEO:['felo.ai / referral','sch.factchat.bot / referral','chatlyai.app / referral','gpt.k-university.ai / referral','skywork.ai / referral'],
+};
+
+function classifySrc(s){
+  if(SEO_S.includes(s)) return 'SEO';
+  if(ETC_S.includes(s)) return '기타';
+  if(GEO_S.includes(s)) return 'GEO';
+  if(PAID_S.includes(s)) return '페이드';
+  if(NL_S.includes(s)) return '뉴스레터';
+  if(EARN_S.includes(s)) return '언드';
+  if(DIR_S.includes(s)) return 'Direct';
+  return null;
+}
+
+function parseDate(txt){
+  const m=txt.match(/시작일:\s*(\d{4})(\d{2})(\d{2})/);
+  const m2=txt.match(/종료일:\s*(\d{4})(\d{2})(\d{2})/);
+  if(!m||!m2) return null;
+  return `${parseInt(m[2])}/${parseInt(m[3])}~${parseInt(m2[2])}/${parseInt(m2[3])}`;
+}
+
+function parseCSV(txt){
+  const label=parseDate(txt);
+  if(!label||DB.weeks.includes(label)) return false;
+  const rows=txt.split('\n').filter(l=>l&&!l.startsWith('#')&&!l.startsWith('세션'))
+    .map(l=>{const p=l.trim().replace(/\r/,'').split(',');return{src:p[0],s:+p[1]||0,e:+p[2]||0,at:+p[4]||0};})
+    .filter(r=>r.s>0);
+  const cA={};CH.forEach(c=>cA[c]={s:0,e:0,wAt:0});
+  const aA={};AI.forEach(a=>aA[a]={s:0,e:0,wAt:0});
+  rows.forEach(r=>{
+    const c=classifySrc(r.src);
+    if(c&&cA[c]){cA[c].s+=r.s;cA[c].e+=r.e;cA[c].wAt+=r.at*r.s;}
+    for(const[a,ss] of Object.entries(AI_MAP)){
+      if(ss.includes(r.src)){aA[a].s+=r.s;aA[a].e+=r.e;aA[a].wAt+=r.at*r.s;}
+    }
+  });
+  DB.weeks.push(label);
+  CH.forEach(c=>{const d=cA[c];DB.chS[c].push(d.s);DB.chEr[c].push(d.s?+(d.e/d.s).toFixed(3):0);DB.chAt[c].push(d.s?Math.round(d.wAt/d.s):0);});
+  AI.forEach(a=>{const d=aA[a];DB.aiS[a].push(d.s);DB.aiEr[a].push(d.s?+(d.e/d.s).toFixed(3):0);DB.aiAt[a].push(d.s?Math.round(d.wAt/d.s):0);});
+
+  // SEO 엔진별 집계
+  const ENG_SRCS = {
+    Google:["google / organic","search.google.com / referral"],
+    Naver: ["naver / organic","m.search.naver.com / referral","naver.com / referral","blog.naver.com / referral"],
+    Bing:  ["bing / organic"],
+    기타:  ["daum / organic","yandex / organic","br.nate.com / referral"],
+  };
+  const SEO_SRC_KEYS = {
+    "google/organic":"google / organic","naver/organic":"naver / organic",
+    "m.search.naver.com":"m.search.naver.com / referral","bing/organic":"bing / organic",
+    "search.google.com":"search.google.com / referral","blog.naver.com":"blog.naver.com / referral",
+  };
+  SEO_ENG.forEach(e=>{
+    const srcs=ENG_SRCS[e];
+    const rs=rows.filter(r=>srcs.includes(r.src));
+    const s=rs.reduce((a,r)=>a+r.s,0), ev=rs.reduce((a,r)=>a+r.e,0);
+    const wAt=rs.reduce((a,r)=>a+r.at*r.s,0);
+    SEO_DB.engS[e].push(s);
+    SEO_DB.engEr[e].push(s?+((ev/s)*100).toFixed(1):0);
+    SEO_DB.engAt[e].push(s?+(wAt/s).toFixed(1):0);
+  });
+  SEO_DB.srcNames.forEach(sn=>{
+    const orig=SEO_SRC_KEYS[sn];
+    const r=rows.find(x=>x.src===orig);
+    SEO_DB.srcS[sn].push(r?r.s:0);
+    SEO_DB.srcEr[sn].push(r&&r.s?+((r.e/r.s)*100).toFixed(1):0);
+  });
+
+  filter.end=DB.weeks.length-1;
+  return true;
+}
+
+document.getElementById('fileInput').addEventListener('change',function(e){
+  const files=Array.from(e.target.files).sort((a,b)=>a.name.localeCompare(b.name));
+  let updated=false,count=0,loaded=0;
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{if(parseCSV(ev.target.result)){updated=true;count++;}
+      if(++loaded===files.length&&updated){renderAll();toast(`${count}개 주차 추가됐습니다.`);}};
+    r.readAsText(f,'utf-8');
+  });
+});
+
+function toast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:#0ea66a;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:500;z-index:9999;';
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
+// ═══════════════════════════
+// 탭 전환
+// ═══════════════════════════
+function sw(name,el){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══════════════════════════
+// SEO 데이터
+// ═══════════════════════════
+const SEO_ENG  = ["Google","Naver","Bing","기타"];
+const SEO_ENGC = {Google:"#4285f4",Naver:"#03c75a",Bing:"#00809d",기타:"#aaa"};
+
+const SEO_DB = {
+  engS:  {Google:[332,448,417,398,493], Naver:[57,63,68,68,79], Bing:[4,13,25,12,6], 기타:[0,0,0,1,0]},
+  engEr: {Google:[50.0,47.5,42.0,54.5,48.7], Naver:[42.1,52.4,44.1,52.9,54.4], Bing:[25.0,46.2,48.0,58.3,33.3], 기타:[0,0,0,0,0]},
+  engAt: {Google:[36.6,31.5,22.1,34.2,26.2], Naver:[17.9,45.3,26.8,52.5,45.9], Bing:[13.8,15.0,72.0,203.5,9.8], 기타:[0,0,0,3.0,0]},
+  // 소스별 (6개 주요 소스)
+  srcNames: ["google/organic","naver/organic","m.search.naver.com","bing/organic","search.google.com","blog.naver.com"],
+  srcS:  {
+    "google/organic":    [332,445,411,381,489],
+    "naver/organic":     [42, 47, 49, 49, 59],
+    "m.search.naver.com":[10, 14, 19, 18, 20],
+    "bing/organic":      [4,  13, 25, 12, 6],
+    "search.google.com": [0,  3,  6,  17, 4],
+    "blog.naver.com":    [5,  1,  0,  1,  0],
+  },
+  srcEr: {
+    "google/organic":    [50.0,47.5,42.1,53.8,48.7],
+    "naver/organic":     [38.1,53.2,42.9,51.0,47.5],
+    "m.search.naver.com":[60.0,42.9,47.4,61.1,75.0],
+    "bing/organic":      [25.0,46.2,48.0,58.3,33.3],
+    "search.google.com": [0,  66.7,33.3,70.6,50.0],
+    "blog.naver.com":    [40.0,100,0,  0,   0],
+  },
+};
+
+function slSeo(arr){ return arr.slice(filter.start, filter.end+1); }
+
+function renderSEO(){
+  const w=wks(), fi=lfi(), i=li();
+
+  // 범례
+  document.getElementById('seoSessLegend').innerHTML = SEO_ENG.map(e=>
+    `<span><span class="leg-sq" style="background:${SEO_ENGC[e]}"></span>${e}</span>`
+  ).join('');
+
+  // 세션 추이
+  mkChart('seoSessChart',{type:'line',
+    data:{labels:w, datasets:SEO_ENG.map((e,k)=>({
+      label:e, data:slSeo(SEO_DB.engS[e]),
+      borderColor:SEO_ENGC[e], backgroundColor:'transparent',
+      pointBackgroundColor:SEO_ENGC[e], pointRadius:4, borderWidth:2,
+      borderDash:k===0?[]:[6,3], tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+              y:{min:0,ticks:{color:tc},grid:{color:gc}}}}
+  });
+
+  // 참여율 추이
+  mkChart('seoErChart',{type:'line',
+    data:{labels:w, datasets:SEO_ENG.map((e,k)=>({
+      label:e, data:slSeo(SEO_DB.engEr[e]).map(v=>+v.toFixed(1)),
+      borderColor:SEO_ENGC[e], backgroundColor:'transparent',
+      pointBackgroundColor:SEO_ENGC[e], pointRadius:4, borderWidth:2,
+      borderDash:k===0?[]:[6,3], tension:.3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},
+              y:{min:0,max:80,ticks:{color:tc,callback:v=>v+'%'},grid:{color:gc}}}}
+  });
+
+  // 비중 도넛 (선택 기간 마지막 주)
+  const pl=DB.weeks[i];
+  document.getElementById('seoPiePeriod').textContent=pl;
+  document.getElementById('seoAtPeriod').textContent=pl;
+  const pieData=SEO_ENG.map(e=>SEO_DB.engS[e][i]);
+  const pieTotal=pieData.reduce((a,b)=>a+b,0);
+  document.getElementById('seoPieLegend').innerHTML=SEO_ENG.map((e,k)=>
+    `<span><span class="leg-sq" style="background:${SEO_ENGC[e]}"></span>${e} ${pieTotal?Math.round(pieData[k]/pieTotal*100):0}%</span>`
+  ).join('');
+  mkChart('seoPieChart',{type:'doughnut',
+    data:{labels:SEO_ENG, datasets:[{data:pieData,backgroundColor:SEO_ENG.map(e=>SEO_ENGC[e]),borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}세션`}}}}
+  });
+
+  // 참여시간 막대
+  mkChart('seoAtChart',{type:'bar',
+    data:{labels:SEO_ENG.filter(e=>e!=='기타'),
+      datasets:[{data:SEO_ENG.filter(e=>e!=='기타').map(e=>SEO_DB.engAt[e][i]),
+        backgroundColor:SEO_ENG.filter(e=>e!=='기타').map(e=>SEO_ENGC[e]+'cc'),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)}초`}}},
+      scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},
+              y:{ticks:{color:tc,callback:v=>v+'s'},grid:{color:gc}}}}
+  });
+
+  // 검색엔진별 주간 기록 테이블
+  let h=`<tr><th>검색엔진</th>${w.map((x,k)=>`<th${k===fi?' class="latest-col"':''}>${x}</th>`).join('')}<th>WoW</th><th>평균</th></tr>`;
+  SEO_ENG.forEach(e=>{
+    const d=slSeo(SEO_DB.engS[e]);
+    const ww=fi>0?wow(d[fi],d[fi-1]):{t:'-',cl:'wow-flat'};
+    const avg=Math.round(d.reduce((a,b)=>a+b,0)/d.length);
+    h+=`<tr><td><span class="ch-dot" style="background:${SEO_ENGC[e]}"></span><span class="ch-name">${e}</span></td>
+      ${d.map((v,k)=>`<td${k===fi?' class="latest-col"':''}>${v||'-'}</td>`).join('')}
+      <td class="${ww.cl}">${ww.t}</td><td>${avg||'-'}</td></tr>`;
+  });
+  const seoTots=w.map((_,k)=>SEO_ENG.reduce((a,e)=>a+slSeo(SEO_DB.engS[e])[k],0));
+  const wST=fi>0?wow(seoTots[fi],seoTots[fi-1]):{t:'-',cl:'wow-flat'};
+  h+=`<tr style="border-top:2px solid var(--border)"><td><strong>SEO 합계</strong></td>
+    ${seoTots.map((v,k)=>`<td${k===fi?' class="latest-col"':''}><strong>${v}</strong></td>`).join('')}
+    <td class="${wST.cl}">${wST.t}</td><td><strong>${Math.round(seoTots.reduce((a,b)=>a+b,0)/seoTots.length)}</strong></td></tr>`;
+  document.getElementById('seoEngineBody').innerHTML=h;
+
+  // 소스별 상세 테이블
+  let h2=`<tr><th>소스</th>${w.map((x,k)=>`<th${k===fi?' class="latest-col"':''}>${x} 세션</th>`).join('')}<th>${DB.weeks[i]} 참여율</th></tr>`;
+  SEO_DB.srcNames.forEach(src=>{
+    const d=slSeo(SEO_DB.srcS[src]);
+    const er=SEO_DB.srcEr[src][i];
+    h2+=`<tr><td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">${src}</td>
+      ${d.map((v,k)=>`<td${k===fi?' class="latest-col"':''}>${v||'-'}</td>`).join('')}
+      <td>${er?pct(er/100):'-'}</td></tr>`;
+  });
+  document.getElementById('seoSrcBody').innerHTML=h2;
+
+  // SEO 인사이트
+  const p=pi();
+  const googleS=SEO_DB.engS.Google[i], googleSP=p!=null?SEO_DB.engS.Google[p]:null;
+  const naverS=SEO_DB.engS.Naver[i],   naverSP=p!=null?SEO_DB.engS.Naver[p]:null;
+  const googleEr=SEO_DB.engEr.Google[i];
+  const naverEr=SEO_DB.engEr.Naver[i];
+  const wGoogle=wow(googleS,googleSP), wNaver=wow(naverS,naverSP);
+  const seoTotal=SEO_ENG.reduce((a,e)=>a+SEO_DB.engS[e][i],0);
+  const googleShare=seoTotal?Math.round(googleS/seoTotal*100):0;
+  const wkLabel=DB.weeks[i];
+
+  const seoIns=[
+    {tag:'info', label:'Google',
+     ti:`Google ${googleS}세션 ${wGoogle.t} · 비중 ${googleShare}%`,
+     de:`${wkLabel} 기준. SEO 유입의 ${googleShare}%를 Google이 담당. 참여율 ${googleEr.toFixed(1)}%.`},
+    {tag:naverS>60?'good':'warn', label:'Naver',
+     ti:`Naver ${naverS}세션 ${wNaver.t}`,
+     de:`${wkLabel} 기준. 네이버 유기검색 + 모바일 검색 합산. 참여율 ${naverEr.toFixed(1)}%.`},
+    {tag:googleEr>=45?'good':'warn', label:'콘텐츠 품질',
+     ti:`Google 참여율 ${googleEr.toFixed(1)}%`,
+     de:`${wkLabel} 기준. 검색으로 들어온 사람이 실제로 읽는 비율. 45% 이상이면 검색 의도와 콘텐츠가 잘 맞는 신호입니다.`},
+    {tag:'purple', label:'성장 기회',
+     ti:'Naver 참여율 안정 상승 중',
+     de:'네이버 유입 독자의 참여율이 꾸준히 상승 추세. 네이버 최적화 콘텐츠 확대를 검토하세요.'},
+  ];
+  document.getElementById('seoInsightGrid').innerHTML=seoIns.map(x=>
+    `<div class="insight-card"><div class="insight-tag tag-${x.tag}">${x.label}</div>
+    <div class="insight-title">${x.ti}</div><div class="insight-desc">${x.de}</div></div>`
+  ).join('');
+}
+
+// ═══════════════════════════
+// 전체 렌더
+// ═══════════════════════════
+function renderAll(){
+  buildChips();
+  renderKPI();
+  renderDonut();
+  renderQuality();
+  renderChTable();
+  renderInsights();
+  renderTrendCharts();
+  renderTrendTables();
+  renderSEO();
+  renderGEO();
+  renderClassify();
+}
+
+// ═══════════════════════════
+// CSV 로드 후 DB 덮어쓰기
+// ═══════════════════════════
+function parseCSVText(text) {
+  const lines = text.trim().split('\n').map(l => l.replace(/\r/,'').split(','));
+  const headers = lines[0];
+  return lines.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h.trim()] = (row[i]||'').trim());
+    return obj;
+  });
+}
+
+async function loadFromSheets() {
+  // 로딩 표시
+  document.getElementById('kpiGrid').innerHTML =
+    '<div style="padding:20px;color:var(--text2);font-size:12px;">📡 구글 시트에서 데이터 불러오는 중...</div>';
+
+  try {
+    const [chRes, aiRes] = await Promise.all([
+      fetch(CSV_CH).then(r => r.text()),
+      fetch(CSV_AI).then(r => r.text()),
+    ]);
+
+    const chRows = parseCSVText(chRes);
+    const aiRows = parseCSVText(aiRes);
+
+    // 주차 목록 (순서 유지, 중복 제거)
+    const weeks = [...new Set(chRows.map(r => r.week))];
+
+    // DB 초기화
+    DB.weeks = weeks;
+    CH.forEach(c => { DB.chS[c]=[]; DB.chEr[c]=[]; DB.chAt[c]=[]; });
+    AI.forEach(a => { DB.aiS[a]=[]; DB.aiEr[a]=[]; DB.aiAt[a]=[]; });
+
+    // 채널별 데이터 채우기
+    weeks.forEach(w => {
+      CH.forEach(c => {
+        const row = chRows.find(r => r.week === w && r.channel === c);
+        DB.chS[c].push(row ? parseInt(row.sessions)||0 : 0);
+        DB.chEr[c].push(row ? parseFloat(row.engagementRate)||0 : 0);
+        DB.chAt[c].push(row ? parseInt(row.avgDuration)||0 : 0);
+      });
+    });
+
+    // AI 소스별 데이터 채우기
+    weeks.forEach(w => {
+      AI.forEach(a => {
+        const row = aiRows.find(r => r.week === w && r.aiSource === a);
+        DB.aiS[a].push(row ? parseInt(row.sessions)||0 : 0);
+        DB.aiEr[a].push(row ? parseFloat(row.engagementRate)||0 : 0);
+        DB.aiAt[a].push(row ? parseInt(row.avgDuration)||0 : 0);
+      });
+    });
+
+    // SEO_DB도 초기화 후 재구성
+    SEO_ENG.forEach(e => { SEO_DB.engS[e]=[]; SEO_DB.engEr[e]=[]; SEO_DB.engAt[e]=[]; });
+    SEO_DB.srcNames.forEach(s => { SEO_DB.srcS[s]=[]; SEO_DB.srcEr[s]=[]; });
+    // SEO_DB는 chRows에 세부 소스가 없으므로 빈 배열 유지 (SEO 탭은 전체 SEO 수치로 대체)
+    weeks.forEach(() => {
+      SEO_ENG.forEach(e => { SEO_DB.engS[e].push(0); SEO_DB.engEr[e].push(0); SEO_DB.engAt[e].push(0); });
+      SEO_DB.srcNames.forEach(s => { SEO_DB.srcS[s].push(0); SEO_DB.srcEr[s].push(0); });
+    });
+
+    filter.start = 0;
+    filter.end = DB.weeks.length - 1;
+
+    renderAll();
+    console.log(`✅ ${weeks.length}주치 데이터 로드 완료`);
+
+  } catch(e) {
+    console.error('CSV 로드 실패:', e);
+    document.getElementById('kpiGrid').innerHTML =
+      '<div style="padding:20px;color:#e03030;font-size:12px;">⚠️ 데이터 로드 실패. 잠시 후 새로고침 해주세요.<br><small>' + e.message + '</small></div>';
+    // 실패 시 하드코딩 데이터로 폴백
+    renderAll();
+  }
+}
+
+loadFromSheets();
+</script>
+</body>
+</html>
