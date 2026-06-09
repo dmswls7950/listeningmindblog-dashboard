@@ -77,22 +77,41 @@ body { background:var(--bg); color:var(--text); font-family:'Pretendard',sans-se
   padding:10px 28px; border-bottom:1px solid var(--border); background:#fff;
 }
 .wf-label { font-size:11px; color:var(--text2); white-space:nowrap; }
-.wf-chips  { display:flex; gap:5px; flex-wrap:wrap; flex:1; }
-.wf-chip {
-  padding:3px 11px; border-radius:20px; font-size:11px; font-weight:500;
-  border:1px solid var(--border2); background:none; color:var(--text2);
-  cursor:pointer; font-family:'DM Mono',monospace; transition:all .15s; white-space:nowrap;
+.wf-slider-wrap { flex:1; display:flex; flex-direction:column; gap:6px; }
+.wf-range-row { display:flex; align-items:center; gap:10px; }
+.wf-range-labels { display:flex; justify-content:space-between; padding:0 2px; }
+.wf-range-label { font-size:10px; font-family:'DM Mono',monospace; color:var(--text2); }
+.wf-range-label.active { color:var(--accent); font-weight:600; }
+/* 듀얼 슬라이더 */
+.slider-container { position:relative; flex:1; height:20px; }
+.slider-container input[type=range] {
+  position:absolute; width:100%; height:4px; top:50%; transform:translateY(-50%);
+  -webkit-appearance:none; appearance:none; background:transparent; pointer-events:none;
+  outline:none;
 }
-.wf-chip:hover  { border-color:var(--accent); color:var(--accent2); }
-.wf-chip.on     { background:#ede9ff; border-color:var(--accent); color:var(--accent); font-weight:600; }
-.wf-divider { width:1px; height:18px; background:var(--border2); }
-.wf-presets { display:flex; gap:5px; }
+.slider-container input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer; pointer-events:all;
+  border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.slider-container input[type=range]::-moz-range-thumb {
+  width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer; pointer-events:all;
+  border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.slider-track { position:absolute; top:50%; transform:translateY(-50%);
+  width:100%; height:4px; border-radius:2px; background:var(--border2); }
+.slider-range { position:absolute; top:50%; transform:translateY(-50%);
+  height:4px; border-radius:2px; background:var(--accent); }
+.wf-presets { display:flex; gap:5px; flex-shrink:0; }
 .wf-preset {
   padding:3px 10px; border-radius:6px; font-size:11px; font-weight:500;
   border:1px solid var(--border2); background:none; color:var(--text2);
   cursor:pointer; transition:all .15s;
 }
 .wf-preset:hover { background:var(--bg2); color:var(--text); }
+.wf-preset.on { background:#ede9ff; border-color:var(--accent); color:var(--accent); font-weight:600; }
 
 /* TABS */
 .tab-nav { display:flex; gap:2px; padding:14px 28px 0; border-bottom:1px solid var(--border); }
@@ -224,13 +243,22 @@ body { background:var(--bg); color:var(--text); font-family:'Pretendard',sans-se
 </label>
 
 <div class="week-filter">
-  <span class="wf-label">주차 선택</span>
-  <div class="wf-chips" id="wfChips"></div>
-  <div class="wf-divider"></div>
-  <div class="wf-presets">
+  <span class="wf-label">기간 선택</span>
+  <div class="wf-slider-wrap">
+    <div class="wf-range-row">
+      <div class="slider-container" id="sliderContainer">
+        <div class="slider-track"></div>
+        <div class="slider-range" id="sliderRange"></div>
+        <input type="range" id="sliderStart" min="0" value="0" step="1">
+        <input type="range" id="sliderEnd" min="0" value="0" step="1">
+      </div>
+    </div>
+    <div class="wf-range-labels" id="sliderLabels"></div>
+  </div>
+  <div class="wf-presets" id="wfPresets">
     <button class="wf-preset" onclick="applyPreset('all')">전체</button>
-    <button class="wf-preset" onclick="applyPreset('last3')">최근 3주</button>
-    <button class="wf-preset" onclick="applyPreset('last2')">최근 2주</button>
+    <button class="wf-preset" onclick="applyPreset('last13')">3개월</button>
+    <button class="wf-preset" onclick="applyPreset('last4')">1개월</button>
     <button class="wf-preset" onclick="applyPreset('latest')">최신 1주</button>
   </div>
 </div>
@@ -451,33 +479,75 @@ const periodLabel = () => {
 };
 
 // ═══════════════════════════
-// 주차 필터 칩
+// 슬라이더 필터
 // ═══════════════════════════
-function buildChips(){
-  document.getElementById('wfChips').innerHTML = DB.weeks.map((w,i)=>
-    `<button class="wf-chip${i>=filter.start&&i<=filter.end?' on':''}" onclick="toggleChip(${i})">${w}</button>`
-  ).join('');
+function buildSlider(){
+  const n = DB.weeks.length;
+  if(n === 0) return;
+
+  const sStart = document.getElementById('sliderStart');
+  const sEnd   = document.getElementById('sliderEnd');
+
+  sStart.max = n - 1;
+  sEnd.max   = n - 1;
+  sStart.value = filter.start;
+  sEnd.value   = filter.end;
+
+  updateSliderUI();
   document.getElementById('periodBadge').textContent = periodLabel();
 }
 
-function toggleChip(i){
-  // 선택된 단일 주차면 해제(전체로), 아니면 해당 주차만
-  if(filter.start===i && filter.end===i){
-    filter.start=0; filter.end=DB.weeks.length-1;
-  } else {
-    filter.start=i; filter.end=i;
-  }
-  buildChips();
-  renderAll();
+function updateSliderUI(){
+  const n = DB.weeks.length;
+  const s = filter.start, e = filter.end;
+  const pctS = n > 1 ? s / (n-1) * 100 : 0;
+  const pctE = n > 1 ? e / (n-1) * 100 : 100;
+
+  document.getElementById('sliderRange').style.left  = pctS + '%';
+  document.getElementById('sliderRange').style.width = (pctE - pctS) + '%';
+
+  // 라벨: 시작/끝 주차만 표시
+  const labels = document.getElementById('sliderLabels');
+  const sw = DB.weeks[s], ew = DB.weeks[e];
+  labels.innerHTML = s === e
+    ? `<span class="wf-range-label active">${sw}</span>`
+    : `<span class="wf-range-label active">${sw}</span><span class="wf-range-label active">${ew}</span>`;
+
+  document.getElementById('periodBadge').textContent = periodLabel();
+
+  // 프리셋 버튼 활성화 표시
+  document.querySelectorAll('.wf-preset').forEach(b => b.classList.remove('on'));
+  const n2 = DB.weeks.length;
+  if(s===0 && e===n2-1) document.querySelector('.wf-preset:nth-child(1)')?.classList.add('on');
+  else if(s===Math.max(0,n2-13) && e===n2-1) document.querySelector('.wf-preset:nth-child(2)')?.classList.add('on');
+  else if(s===Math.max(0,n2-4) && e===n2-1) document.querySelector('.wf-preset:nth-child(3)')?.classList.add('on');
+  else if(s===n2-1 && e===n2-1) document.querySelector('.wf-preset:nth-child(4)')?.classList.add('on');
 }
+
+// 슬라이더 이벤트
+let sliderTimer = null;
+function onSliderChange(){
+  const sStart = document.getElementById('sliderStart');
+  const sEnd   = document.getElementById('sliderEnd');
+  let s = parseInt(sStart.value), e = parseInt(sEnd.value);
+  // 교차 방지
+  if(s > e) { if(this === sStart) s = e; else e = s; }
+  filter.start = s; filter.end = e;
+  updateSliderUI();
+  // 드래그 중 렌더는 debounce
+  clearTimeout(sliderTimer);
+  sliderTimer = setTimeout(() => renderAll(), 150);
+}
+document.getElementById('sliderStart').addEventListener('input', onSliderChange);
+document.getElementById('sliderEnd').addEventListener('input', onSliderChange);
 
 function applyPreset(p){
   const n=DB.weeks.length;
-  if(p==='all')    {filter.start=0;     filter.end=n-1;}
-  if(p==='last3')  {filter.start=Math.max(0,n-3); filter.end=n-1;}
-  if(p==='last2')  {filter.start=Math.max(0,n-2); filter.end=n-1;}
-  if(p==='latest') {filter.start=n-1;   filter.end=n-1;}
-  buildChips();
+  if(p==='all')    {filter.start=0;               filter.end=n-1;}
+  if(p==='last13') {filter.start=Math.max(0,n-13); filter.end=n-1;}
+  if(p==='last4')  {filter.start=Math.max(0,n-4);  filter.end=n-1;}
+  if(p==='latest') {filter.start=n-1;              filter.end=n-1;}
+  buildSlider();
   renderAll();
 }
 
@@ -1049,7 +1119,7 @@ function renderSEO(){
 // 전체 렌더
 // ═══════════════════════════
 function renderAll(){
-  buildChips();
+  buildSlider();
   renderKPI();
   renderDonut();
   renderQuality();
